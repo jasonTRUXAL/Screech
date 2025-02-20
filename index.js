@@ -55,8 +55,8 @@ async function getBroadcasterId() {
 async function getRandomClip() {
   const token = await getTwitchAccessToken();
   const broadcasterId = await getBroadcasterId();
-  // Fetch a list of clips (adjust 'first' if you want more results)
-  const url = `https://api.twitch.tv/helix/clips?broadcaster_id=${broadcasterId}&first=20`;
+  // gathered this example from the internets, change value of "first" for more... so, do many
+  const url = `https://api.twitch.tv/helix/clips?broadcaster_id=${broadcasterId}&first=200`;
   const response = await fetch(url, {
     headers: {
       'Client-ID': TWITCH_CLIENT_ID,
@@ -83,24 +83,14 @@ client.on('interactionCreate', async interaction => {
     await interaction.deferReply(); // Acknowledge the command while processing
     try {
       const clip = await getRandomClip();
-
-      // build an embed with the clip details
-      const embed = new EmbedBuilder()
-        .setTitle(clip.title || "Twitch Clip")
-        .setURL(clip.url)
-        .setImage(clip.thumbnail_url) // shows the clip thumbnail
-        .setFooter({ text: `By ${clip.creator_name}` })
-        .setTimestamp(new Date(clip.created_at));
-
-      await interaction.editReply({
-        content: `Here's a random clip from ${TWITCH_CHANNEL_LOGIN}:`,
-        embeds: [embed]
-      });
+      // change the process to instead embed the video not show a thumbnail, also flavor text
+      await interaction.editReply(`HERE IS MAC CHAOS SCREECHING ${clip.url}`);
     } catch (error) {
       console.error("Error fetching clip:", error);
-      await interaction.editReply("Sorry, I couldn't fetch a clip at this time.");
+      await interaction.editReply("APOLOGIES, I AM DEAF CURRENTLY!");
     }
   }
 });
+
 
 client.login(DISCORD_TOKEN);
