@@ -1,0 +1,26 @@
+{
+  "name": "screech",
+  "version": "1.0.0",
+  "description": "Twitch Clip to Discord chat relay cause I need one",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jasonTRUXAL/Screech.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jasonTRUXAL/Screech/issues"
+  },
+  "homepage": "https://github.com/jasonTRUXAL/Screech#readme",
+  "dependencies": {
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7",
+    "node-fetch": "^2.7.0"
+  }
+}
