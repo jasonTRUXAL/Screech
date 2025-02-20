@@ -56,7 +56,7 @@ async function getRandomClip() {
   const token = await getTwitchAccessToken();
   const broadcasterId = await getBroadcasterId();
   // gathered this example from the internets, change value of "first" for more... so, do many
-  const url = `https://api.twitch.tv/helix/clips?broadcaster_id=${broadcasterId}&first=200`;
+  const url = `https://api.twitch.tv/helix/clips?broadcaster_id=${broadcasterId}&first=50`;
   const response = await fetch(url, {
     headers: {
       'Client-ID': TWITCH_CLIENT_ID,
@@ -84,7 +84,7 @@ client.on('interactionCreate', async interaction => {
     try {
       const clip = await getRandomClip();
       // change the process to instead embed the video not show a thumbnail, also flavor text
-      await interaction.editReply(`HERE IS MAC CHAOS SCREECHING ${clip.url}`);
+      await interaction.editReply(`<:cacopog:1342021381742788689> HERE IS MAC CHAOS SCREECHING <:cacopog:1342021381742788689>\n${clip.url}`);
     } catch (error) {
       console.error("Error fetching clip:", error);
       await interaction.editReply("APOLOGIES, I AM DEAF CURRENTLY!");
