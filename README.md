@@ -1,2 +1,2 @@
 # Screech
- Twitch Clip to Discord chat relay cause I need one
+ Twitch Clip to Discord chat relay cause I need one. This simple Discord App Bot will run via NodeJS server idly and wait for a call via command line. When called, it will access the specified Twitch user's page (hardcoded currently) and view the last 50 clips. From there it'll randomly choose a clip to paste into Discord. Currently themed to a friend's experiences, but simple to alter as needed.
