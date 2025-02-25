@@ -1,42 +1,68 @@
 // bot has been a success let's update with the ability to keep track of how much we nag mac
 require('dotenv').config();
 const fetch = require('node-fetch');
+// we're also going to write this locally now instead of a var that resets every launch
+const fs = require('fs');
+const path = require('path');
+
+// annoying functions to utilize local files:
+const dataFilePath = path.join(__dirname, 'gifData.json');
+function loadData() {
+  if (fs.existsSync(dataFilePath)) {
+    try {
+      const rawData = fs.readFileSync(dataFilePath, 'utf8');
+      return JSON.parse(rawData);
+    } catch (err) {
+      console.error("Error reading data file:", err);
+      return null;
+    }
+  }
+  return null;
+}
+function saveData(data) {
+  try {
+    fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error("Error writing data file:", err);
+  }
+}
+let defaultTrackedGIFs = [
+  {
+    filename: "strim.gif",
+    game: "DOOM",
+    count: 0,
+  },
+  {
+    filename: "streamdammit.gif",
+    game: "MiSide",
+    count: 0,
+  },
+];
+const storedData = loadData();
+let trackedGIFs = storedData && storedData.trackedGIFs ? storedData.trackedGIFs : defaultTrackedGIFs;
+let lastStreamDate = storedData && storedData.lastStreamDate ? storedData.lastStreamDate : null;
 
 module.exports = (client) => {
-  // array of tracked gifs, currently two, doom stuffs and miside stuffs
-  const trackedGIFs = [
-    {
-      filename: "strim.gif",
-      game: "DLOOLM",
-      count: 0,
-    },
-    {
-      filename: "streamdammit.gif",
-      game: "MiSide",
-      count: 0,
-    },
-    // sure more to come in the future
-  ];
-
-  // may use but need to store date somewhere of last stream
-  let lastStreamDate = null;
-
   // use bot to read and detect use of gifs, this is really tricky... should prob name vars better
   // use discord.js client.on's messageCreate class
   // https://discord.js.org/docs/packages/discord.js/main/Message:Class
   client.on('messageCreate', message => {
 	// ignore bots using the gif
     if (message.author.bot) return;
+    let updated = false;
 	// iterate through the array and check...
-	console.log(`discovered ${message.content}`);
     trackedGIFs.forEach(gifTracker => {
 	  // if the content of the message has the array's filename..
       if (message.content.includes(gifTracker.filename)) {
 		// keep track!
         gifTracker.count++;
+		updated = true;
 		console.log(`Count++ | Saw ${gifTracker.filename} again, ${gifTracker.count} times total.`);
       }
     });
+	if (updated) {
+      saveData({ trackedGIFs, lastStreamDate });
+    }
   });
 
   // let's create a new command we've done this before
@@ -62,6 +88,7 @@ module.exports = (client) => {
           });
 		  // and keep track of the last stream by making it current
           lastStreamDate = currentStreamDate;
+		  saveData({ trackedGIFs, lastStreamDate });
         }
       } catch (error) {
         console.error("Error fetching last stream date:", error);
@@ -76,12 +103,12 @@ module.exports = (client) => {
       // let's type out responses generically for now
 	  // declare the bot responses and reference each game, basically
       const responseLines = trackedGIFs.map(gifTracker => {
-        return `<:cacopog:1342021381742788689> MAC CHAOS HAS BEEN TOLD TO STREAM ${gifTracker.game.toUpperCase()} ${gifTracker.count} AMOUNT OF TIMES! <:cacopog:1342021381742788689>`;
+        return `**MAC CHAOS** HAS BEEN TOLD TO STREAM ${gifTracker.game}\n<:cacopog:1342021381742788689>\`${gifTracker.count} TIMES\`<:cacopog:1342021381742788689>`;
       });
       let responseText = responseLines.join('\n');
 
       // reflection section
-      const reflectionNote = "";
+      const reflectionNote = "<:cacopog:1342021381742788689> <:cacopog:1342021381742788689> HOW LONG BEFORE MAC CHAOS STREAMS!? <:cacopog:1342021381742788689> <:cacopog:1342021381742788689>";
       if (reflectionNote) {
         responseText += "\n" + reflectionNote;
       }
