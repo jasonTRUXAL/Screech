@@ -6,12 +6,12 @@ module.exports = (client) => {
   // array of tracked gifs, currently two, doom stuffs and miside stuffs
   const trackedGIFs = [
     {
-      url: "https://cdn.discordapp.com/attachments/628059125204385794/1335780946498293760/strim.gif?ex=67be6b73&is=67bd19f3&hm=a7187e0632704b043b72b7bccbb845a946bef8749a44818090018a47ed05596b&",
+      filename: "strim.gif",
       game: "DLOOLM",
       count: 0,
     },
     {
-      url: "https://cdn.discordapp.com/attachments/628059125204385794/1339097921777307669/streamdammit.gif?ex=67bdf65f&is=67bca4df&hm=06c47dfbcca10a1a04b114cea5b869259267ed2eda6fa7c641a9db448f38d21e&",
+      filename: "streamdammit.gif",
       game: "MiSide",
       count: 0,
     },
@@ -28,10 +28,12 @@ module.exports = (client) => {
 	// ignore bots using the gif
     if (message.author.bot) return;
 	// iterate through the array and check...
+	console.log(`discovered ${message.content}`);
     trackedGIFs.forEach(gifTracker => {
-	  // if the content of the message has the array's url..
-      if (message.content.includes(gifTracker.url)) {
+	  // if the content of the message has the array's filename..
+      if (message.content.includes(gifTracker.filename)) {
 		// keep track!
+		console.log(`increment opportunity discovered because we found ${gifTracker.filename} ${gifTracker.count} times total`);
         gifTracker.count++;
       }
     });
