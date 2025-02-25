@@ -11,6 +11,10 @@ const commands = [
   new SlashCommandBuilder()
     .setName('clips')
     .setDescription('Screech a clip from mAc\'s Twitch')
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName('streamdammit')
+    .setDescription('How many times have we asked mAc to stream?')
     .toJSON()
 ];
 

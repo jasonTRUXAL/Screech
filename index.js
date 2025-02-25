@@ -10,6 +10,8 @@ const TWITCH_CHANNEL_LOGIN = "mAcStreamos"; // single use only for now, maybe tu
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
+require('./streamdamnit')(client);
+
 // vars to cache Twitch token and broadcaster ID
 let twitchAccessToken = null;
 let twitchAccessTokenExpiry = null;
