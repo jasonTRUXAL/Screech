@@ -33,14 +33,14 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 	
     await rest.put(
       Routes.applicationCommands(CLIENT_ID),
-      { body: globalCommands }
+      { body: commands }
     );
     console.log('Successfully reloaded global commands.');
 	
     if (GUILD_ID) {
       await rest.put(
         Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
-        { body: globalCommands }
+        { body: guildCommands }
       );
       console.log('Successfully reloaded restricted server commands.');
     }
