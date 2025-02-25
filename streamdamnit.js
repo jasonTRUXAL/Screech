@@ -33,8 +33,8 @@ module.exports = (client) => {
 	  // if the content of the message has the array's filename..
       if (message.content.includes(gifTracker.filename)) {
 		// keep track!
-		console.log(`increment opportunity discovered because we found ${gifTracker.filename} ${gifTracker.count} times total`);
         gifTracker.count++;
+		console.log(`Count++ | Saw ${gifTracker.filename} again, ${gifTracker.count} times total.`);
       }
     });
   });
@@ -44,7 +44,13 @@ module.exports = (client) => {
     if (!interaction.isChatInputCommand()) return;
 	// ugh i changed it from streamdamnit to streamdammit because we are weird
     if (interaction.commandName === 'streamdammit') {
-      await interaction.deferReply();
+      try {
+		// using try to see if this prevents the timeout
+		await interaction.deferReply();
+      } catch (err) {
+		console.error("Error deferring reply:", err);
+		return;
+      }
 
       try {
         // let's get the latest stream date
@@ -59,6 +65,12 @@ module.exports = (client) => {
         }
       } catch (error) {
         console.error("Error fetching last stream date:", error);
+		try {
+			await interaction.editReply("An error occurred while fetching stream data.");
+		} catch (editError) {
+			console.error("Error editing reply:", editError);
+		}
+		return;
       }
 
       // let's type out responses generically for now
@@ -69,12 +81,16 @@ module.exports = (client) => {
       let responseText = responseLines.join('\n');
 
       // reflection section
-      const reflectionNote = "this will be post content displayed after";
+      const reflectionNote = "";
       if (reflectionNote) {
         responseText += "\n" + reflectionNote;
       }
 
-      await interaction.editReply(responseText);
+      try {
+		  await interaction.editReply(responseText);
+	  } catch (err) {
+		  console.error("Error editing reply:", err);
+	  }
     }
   });
 
