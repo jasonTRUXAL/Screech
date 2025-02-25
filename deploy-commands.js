@@ -12,14 +12,14 @@ const commands = [
     .setName('clips')
     .setDescription('Screech a clip from mAc\'s Twitch')
     .toJSON(),
-];
-
-// guild commands, used for testing
-const guildCommands = [
   new SlashCommandBuilder()
     .setName('streamdammit')
     .setDescription('How many times have we asked mAc to stream?')
     .toJSON()
+];
+
+// guild commands, used for testing
+const guildCommands = [
 ];
 
 // exploring rest

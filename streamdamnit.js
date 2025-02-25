@@ -29,7 +29,7 @@ function saveData(data) {
 let defaultTrackedGIFs = [
   {
     filename: "strim.gif",
-    game: "DOOM",
+    game: "DLOOLM",
     count: 0,
   },
   {
@@ -103,12 +103,12 @@ module.exports = (client) => {
       // let's type out responses generically for now
 	  // declare the bot responses and reference each game, basically
       const responseLines = trackedGIFs.map(gifTracker => {
-        return `**MAC CHAOS** HAS BEEN TOLD TO STREAM ${gifTracker.game}\n<:cacopog:1342021381742788689>\`${gifTracker.count} TIMES\`<:cacopog:1342021381742788689>`;
+        return `MAC CHAOS HAS YET TO GIB STREAM OF **${gifTracker.game}** <:cacopog:1342021381742788689>\`${gifTracker.count} TIMES\`<:cacopog:1342021381742788689> **STREAMDAMMIT!**`;
       });
       let responseText = responseLines.join('\n');
 
       // reflection section
-      const reflectionNote = "<:cacopog:1342021381742788689> <:cacopog:1342021381742788689> HOW LONG BEFORE MAC CHAOS STREAMS!? <:cacopog:1342021381742788689> <:cacopog:1342021381742788689>";
+      const reflectionNote = "";
       if (reflectionNote) {
         responseText += "\n" + reflectionNote;
       }
