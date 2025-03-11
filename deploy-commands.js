@@ -10,7 +10,11 @@ const GUILD_ID = process.env.GUILD_ID;   // used only for development, storing f
 const commands = [
   new SlashCommandBuilder()
     .setName('clips')
-    .setDescription('Screech a clip from mAc\'s Twitch')
+    .setDescription('Screech a clip from mAc\'s Twitch.')
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName('doom')
+    .setDescription('Watch the 2 hour documentary of mAc\'s DOOM streams.')
     .toJSON(),
   new SlashCommandBuilder()
     .setName('streamdammit')
