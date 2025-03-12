@@ -18,6 +18,7 @@ const client = new Client({
 });
 
 require('./streamdamnit')(client);
+require('./streamos')(client);
 
 // vars to cache Twitch token and broadcaster ID
 let twitchAccessToken = null;
@@ -80,6 +81,7 @@ async function getRandomClip() {
   const randomIndex = Math.floor(Math.random() * data.data.length);
   return data.data[randomIndex];
 }
+
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);

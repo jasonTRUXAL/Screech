@@ -13,17 +13,21 @@ const commands = [
     .setDescription('Screech a clip from mAc\'s Twitch.')
     .toJSON(),
   new SlashCommandBuilder()
-    .setName('doom')
-    .setDescription('Watch the 2 hour documentary of mAc\'s DOOM streams.')
-    .toJSON(),
-  new SlashCommandBuilder()
     .setName('streamdammit')
     .setDescription('How many times have we asked mAc to stream?')
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName('doom')
+    .setDescription('Watch the 2 hour documentary of mAc\'s DOOM streams.')
     .toJSON()
 ];
 
 // guild commands, used for testing
 const guildCommands = [
+  new SlashCommandBuilder()
+    .setName('streamos')
+    .setDescription('Toggle opt in/out for stream notifications.')
+    .toJSON()
 ];
 
 // exploring rest
