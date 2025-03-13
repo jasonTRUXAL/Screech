@@ -19,7 +19,7 @@ const commands = [
   new SlashCommandBuilder()
     .setName('streamos')
     .setDescription('Toggle opt in/out for stream notifications.')
-    .toJSON()
+    .toJSON(),
   new SlashCommandBuilder()
     .setName('doom')
     .setDescription('Watch the 2 hour documentary of mAc\'s DOOM streams.')

@@ -17,11 +17,12 @@ module.exports = (client) => {
         url: "https://twitch.tv/mAcStreamos"
       };
 
-    .setTitle("<:cacopog:1342021381742788689> MAC CHAOS IS STREAMING <:cacopog:1342021381742788689>")
-    .setURL(streamUrl)
-    .setDescription(`**${streamTitle}**\n${gameName}`)
-    .setColor(0x9146FF)
-    .setTimestamp();
+    const embed = new EmbedBuilder()
+      .setTitle("<:cacopog:1342021381742788689> MAC CHAOS IS STREAMING <:cacopog:1342021381742788689>")
+      .setURL(streamInfo.url)
+      .setDescription(`**${streamInfo.title}**\n${streamInfo.game}`)
+      .setColor(0x9146FF)
+      .setTimestamp();
 
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
