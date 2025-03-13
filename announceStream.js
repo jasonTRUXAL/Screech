@@ -61,7 +61,7 @@ async function announceLiveStream(client) {
   const liveStream = await getLiveStreamInfo();
   // if this is somehow called and is not live, note it in console to see why
   if (!liveStream) {
-    console.log("Streamer is not live, why did this send?");
+    // console.log("Streamer is not live"); // no longer needed
     return;
   }
 
@@ -74,9 +74,17 @@ async function announceLiveStream(client) {
   const embed = new EmbedBuilder()
     .setTitle("<:cacopog:1342021381742788689> MAC CHAOS IS STREAMING <:cacopog:1342021381742788689>")
     .setURL(streamUrl)
-    .setDescription(`**${streamTitle}**\n${gameName}`)
+    .setDescription(`**${streamTitle}**\n> ${gameName}`)
+    .setThumbnail("https://static-cdn.jtvnw.net/jtv_user_pictures/macstreamos-profile_image-e05c6b505301c2de-70x70.png")
     .setColor(0x9146FF)
     .setTimestamp();
+	
+  if (liveStream.thumbnail_url) {
+    const thumbnailUrl = liveStream.thumbnail_url
+      .replace('{width}', '1280')
+      .replace('{height}', '720');
+    embed.setImage(thumbnailUrl);
+  }
 
   // retrieve opted-in users using the helper attached in streamos.js (aha it was needed)
   let mentions = "";

@@ -20,6 +20,7 @@ const client = new Client({
 require('./streamdamnit')(client);
 require('./streamos')(client);
 require('./testAnnounce')(client); // this is for testing only don't really need it
+const announceLiveStream = require('./announceStream');
 
 // vars to cache Twitch token and broadcaster ID
 let twitchAccessToken = null;
@@ -124,6 +125,11 @@ client.on('interactionCreate', async interaction => {
     }
   }
 });
+
+setInterval(async () => {
+  // console.log("Checking if mAc is live..."); // confirmed this is working
+  await announceLiveStream(client);
+}, 60000);
 
 
 client.login(DISCORD_TOKEN);
