@@ -19,6 +19,7 @@ const client = new Client({
 
 require('./streamdamnit')(client);
 require('./streamos')(client);
+require('./testAnnounce')(client); // this is for testing only don't really need it
 
 // vars to cache Twitch token and broadcaster ID
 let twitchAccessToken = null;

@@ -17,6 +17,10 @@ const commands = [
     .setDescription('How many times have we asked mAc to stream?')
     .toJSON(),
   new SlashCommandBuilder()
+    .setName('streamos')
+    .setDescription('Toggle opt in/out for stream notifications.')
+    .toJSON()
+  new SlashCommandBuilder()
     .setName('doom')
     .setDescription('Watch the 2 hour documentary of mAc\'s DOOM streams.')
     .toJSON()
@@ -25,8 +29,8 @@ const commands = [
 // guild commands, used for testing
 const guildCommands = [
   new SlashCommandBuilder()
-    .setName('streamos')
-    .setDescription('Toggle opt in/out for stream notifications.')
+    .setName('testannounce')
+    .setDescription('Trigger a test announcement embed.')
     .toJSON()
 ];
 
