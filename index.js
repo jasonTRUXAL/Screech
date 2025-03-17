@@ -84,7 +84,6 @@ async function getRandomClip() {
   return data.data[randomIndex];
 }
 
-
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
@@ -92,15 +91,16 @@ client.once('ready', () => {
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
   
-  try {
-    await interaction.deferReply();
-  } catch (err) {
-    console.error("Error deferring reply:", err);
-    return;
-  }
-
   if (interaction.commandName === 'clips') {
-    await interaction.deferReply(); // Acknowledge the command while processing
+    // altering defer (just a note)
+    if (!interaction.deferred && !interaction.replied) {
+      try {
+        await interaction.deferReply();
+      } catch (err) {
+        console.error("Error deferring reply for /clips:", err);
+        return;
+      }
+    }
     try {
       const clip = await getRandomClip();
       // change the process to instead embed the video not show a thumbnail, also flavor text
@@ -111,8 +111,15 @@ client.on('interactionCreate', async interaction => {
     }
   } else if (interaction.commandName === 'doom') {
     // new /doom command to present a fancy YouTube link card
+    if (!interaction.deferred && !interaction.replied) {
+      try {
+        await interaction.deferReply();
+      } catch (err) {
+        console.error("Error deferring reply for /doom:", err);
+        return;
+      }
+    }
     try {
-      await interaction.deferReply();
       const youtubeUrl = "https://youtu.be/uzqG536vBTw";
       // create a custom embed that resembles card.
       // note: setting the URL on the embed makes the title clickable.
@@ -137,6 +144,5 @@ setInterval(async () => {
   // console.log("Checking if mAc is live..."); // confirmed this is working
   await announceLiveStream(client);
 }, 60000);
-
 
 client.login(DISCORD_TOKEN);

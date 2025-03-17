@@ -8,14 +8,17 @@ module.exports = (client) => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== 'testannounce') return;
 	
-	if (!interaction.deferred && !interaction.replied) {
-	  await interaction.deferReply();
+    if (!interaction.deferred && !interaction.replied) {
+      try {
+        await interaction.deferReply();
+      } catch (err) {
+        console.error("Error deferring reply for /testannounce:", err);
+        return;
+      }
     }
     
     try {
-      await interaction.deferReply();
-      
-      const streamInfo = {
+        const streamInfo = {
         title: "Doom Part XX",
         game: "DOOM 2016",
         url: "https://twitch.tv/mAcStreamos"
