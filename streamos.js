@@ -39,8 +39,8 @@ module.exports = (client) => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== 'streamos') return;
 	
-	if (!interaction.deferred && !interaction.replied) {
-	  await interaction.deferReply();
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply();
     }
     
     // toggle opt in/out for stream notifications
@@ -49,12 +49,12 @@ module.exports = (client) => {
       // if already opted in remove them (opt out)
       optInData.optInUsers = optInData.optInUsers.filter(id => id !== userId);
       saveOptInData(optInData);
-      await interaction.reply("<:cacopog:1342021381742788689> I WILL TRY TO SCREECH AT YOU LESS! <:cacopog:1342021381742788689>");
+      await interaction.editReply("<:cacopog:1342021381742788689> I WILL TRY TO SCREECH AT YOU LESS! <:cacopog:1342021381742788689>");
     } else {
       // if not then add them (opt in)
       optInData.optInUsers.push(userId);
       saveOptInData(optInData);
-      await interaction.reply("<:cacopog:1342021381742788689> **I WILL SCREECH AT YOU WHEN MAC CHAOS IS STREAMING!** <:cacopog:1342021381742788689>");
+      await interaction.editReply("<:cacopog:1342021381742788689> **I WILL SCREECH AT YOU WHEN MAC CHAOS IS STREAMING!** <:cacopog:1342021381742788689>");
     }
   });
   
