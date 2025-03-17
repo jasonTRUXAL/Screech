@@ -38,6 +38,10 @@ module.exports = (client) => {
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== 'streamos') return;
+	
+	if (!interaction.deferred && !interaction.replied) {
+	  await interaction.deferReply();
+    }
     
     // toggle opt in/out for stream notifications
     const userId = interaction.user.id;

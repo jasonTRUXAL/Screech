@@ -91,6 +91,13 @@ client.once('ready', () => {
 
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
+  
+  try {
+    await interaction.deferReply();
+  } catch (err) {
+    console.error("Error deferring reply:", err);
+    return;
+  }
 
   if (interaction.commandName === 'clips') {
     await interaction.deferReply(); // Acknowledge the command while processing

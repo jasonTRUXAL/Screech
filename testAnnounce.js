@@ -7,6 +7,10 @@ module.exports = (client) => {
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== 'testannounce') return;
+	
+	if (!interaction.deferred && !interaction.replied) {
+	  await interaction.deferReply();
+    }
     
     try {
       await interaction.deferReply();
