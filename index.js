@@ -20,6 +20,7 @@ const client = new Client({
 require('./streamdamnit')(client);
 require('./streamos')(client);
 require('./testAnnounce')(client); // this is for testing only don't really need it
+require('./gameGather')(client);
 const announceLiveStream = require('./announceStream');
 
 // vars to cache Twitch token and broadcaster ID
@@ -89,7 +90,10 @@ client.once('ready', () => {
 });
 
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
+  // if (!interaction.isChatInputCommand()) return;
+  if (interaction.isChatInputCommand()) {
+    console.log("Received interaction:", interaction.commandName);
+  }
   
   if (interaction.commandName === 'clips') {
     // altering defer (just a note)
