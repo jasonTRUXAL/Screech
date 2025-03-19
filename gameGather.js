@@ -136,10 +136,19 @@ module.exports = (client) => {
     }
     
     // create a ReactionCollector that listens only for reactions from the invoker
-    const filter = (reaction, user) => {
-      return user.id === interaction.user.id && 
-             (Object.values(gameEmojis).includes(reaction.emoji.id) || reaction.emoji.name === '✅');
-    };
+	const filter = (reaction, user) => {
+	  // for debugging, log the emoji object as a test
+	  console.log("Debug: Reaction received:", reaction.emoji);
+	  if (user.id !== interaction.user.id) return false;
+	  // always accept the confirm emoji by name
+	  if (reaction.emoji.name === '✅') return true;
+	  // list of valid custom emoji ids and fallback names :|
+	  const validEmojiIds = Object.values(gameEmojis);
+	  const validEmojiNames = ["amongus", "blazblue", "hustle", "cacopog"];
+	  return (reaction.emoji.id && validEmojiIds.includes(reaction.emoji.id)) ||
+			 (reaction.emoji.name && validEmojiNames.includes(reaction.emoji.name.toLowerCase()));
+	};
+
     const collector = msg.createReactionCollector({ filter, time: 30000 });
     console.log("[GAMES] Reaction collector started.");
     
