@@ -179,15 +179,30 @@ module.exports = (client) => {
     console.log(`[RALLY] Command received from ${interaction.user.tag}`);
     
     // for /rally, we expect a string option named "game"
-    const game = interaction.options.getString('game');
-    // validate that the game is one of the allowed ones
-    if (!Object.keys(gameEmojis).includes(game)) {
-      try {
-        await interaction.reply({ content: "Invalid game selected. Please choose one of Among Us, BlazBlue, Hustle, or Doom.", flags: 64 });
-        console.log("[RALLY] Invalid game selected reply sent.");
-      } catch (err) {
-        console.error("Error replying to invalid game in /rally:", err);
-      }
+    let gameInput = interaction.options.getString('game');
+    if (!gameInput) {
+      await interaction.reply({ content: "You must specify a game. Available options: Among Us, BlazBlue, Hustle, Doom", flags: 64 });
+      return;
+    }
+    
+    // make the input case-insensitive and trim spaces
+	// really kind of failed on the idea of not having alternatives
+	// so dirty fix below
+    gameInput = gameInput.trim().toLowerCase();
+    const gameAliases = {
+      "among us": "Among Us",
+      "amogus": "Among Us",
+      "amongus": "Among Us",
+      "blazblue": "BlazBlue",
+      "blaz blue": "BlazBlue",
+      "bb": "BlazBlue",
+      "hustle": "Hustle",
+      "doom": "Doom"
+    };
+    const canonicalGame = gameAliases[gameInput];
+    if (!canonicalGame) {
+      await interaction.reply({ content: "Invalid game selected. Please choose one of: Among Us, BlazBlue, Hustle, Doom", flags: 64 });
+      console.log("[RALLY] Invalid game selected reply sent.");
       return;
     }
     
@@ -204,20 +219,20 @@ module.exports = (client) => {
     
     // load current game data
     let gameData = loadGameData();
-    // get list of users opted in for the selected game
-    const optedInUsers = gameData.games[game] || [];
-    const mentions = optedInUsers.length > 0 ? optedInUsers.map(id => `<@${id}>`).join(' ') : "None";
+    // get list of users opted in for the selected game (using the canonical name)
+    const optedInUsers = gameData.games[canonicalGame] || [];
+    const mentions = optedInUsers.length > 0 ? optedInUsers.map(id => `<@${id}>`).join(' ') : "NO ONE JOINED, I AM SORRY!";
     
     // create an embed announcement for the rally
     const embed = new EmbedBuilder()
-      .setTitle(`Rally for ${game}!`)
+      .setTitle(`Rally for ${canonicalGame}!`)
       .setDescription(`React to this message to indicate your interest:\n\n✅ : I'm in\n❌ : I'm not\n🚫 : Stop alerts & remove me from notifications`)
       .setColor(0x9146FF)
       .setTimestamp();
       
     let rallyMsg;
     try {
-      rallyMsg = await interaction.editReply({ content: `${mentions}\nRally initiated for ${game}!`, embeds: [embed] });
+      rallyMsg = await interaction.editReply({ content: `${mentions}\nRally initiated for ${canonicalGame}!`, embeds: [embed] });
       console.log("[RALLY] Rally message sent.");
     } catch (err) {
       console.error("Error sending rally message for /rally:", err);
@@ -263,9 +278,9 @@ module.exports = (client) => {
       // remove any users who reacted with 🚫 from the opt-in list for this game
       let updated = false;
       rallyResults.stop.forEach(userId => {
-        if (gameData.games[game].includes(userId)) {
-          gameData.games[game] = gameData.games[game].filter(id => id !== userId);
-          console.log(`[RALLY] Removed user ${userId} from ${game} notifications due to 🚫 reaction.`);
+        if (gameData.games[canonicalGame].includes(userId)) {
+          gameData.games[canonicalGame] = gameData.games[canonicalGame].filter(id => id !== userId);
+          console.log(`[RALLY] Removed user ${userId} from ${canonicalGame} notifications due to 🚫 reaction.`);
           updated = true;
         }
       });
@@ -274,7 +289,7 @@ module.exports = (client) => {
       }
       
       // build a summary of the rally
-      let summary = `Rally for ${game} has ended.\n\n`;
+      let summary = `Rally for ${canonicalGame} has ended.\n\n`;
       summary += "Interested (✅): " + (rallyResults.interested.size > 0 ? Array.from(rallyResults.interested).map(id => `<@${id}>`).join(', ') : "None") + "\n";
       summary += "Not Interested (❌): " + (rallyResults.notInterested.size > 0 ? Array.from(rallyResults.notInterested).map(id => `<@${id}>`).join(', ') : "None") + "\n";
       summary += "Removed from notifications (🚫): " + (rallyResults.stop.size > 0 ? Array.from(rallyResults.stop).map(id => `<@${id}>`).join(', ') : "None");

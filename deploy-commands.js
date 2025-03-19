@@ -35,6 +35,11 @@ const guildCommands = [
   new SlashCommandBuilder()
     .setName('rally')
     .setDescription('RALLY THE SQUAD FOR GAMES!')
+    .addStringOption(option =>
+      option.setName('game')
+        .setDescription('Supporting: DOOM, Among Us, BlazBlue, Hustle')
+        .setRequired(true)
+    )
     .toJSON()
 ];
 
