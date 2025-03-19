@@ -28,10 +28,14 @@ const commands = [
 
 // guild commands, used for testing
 const guildCommands = [
-  //new SlashCommandBuilder()
-    //.setName('testannounce')
-    //.setDescription('Trigger a test announcement embed.')
-    //.toJSON()
+  new SlashCommandBuilder()
+    .setName('games')
+    .setDescription('Register your preferred game notifications.')
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName('rally')
+    .setDescription('RALLY THE SQUAD FOR GAMES!')
+    .toJSON()
 ];
 
 // exploring rest
