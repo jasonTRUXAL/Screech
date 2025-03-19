@@ -1,6 +1,6 @@
 {
   "name": "screech",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Twitch Clip to Discord chat relay cause I need one",
   "main": "index.js",
   "scripts": {

@@ -23,15 +23,15 @@ const commands = [
   new SlashCommandBuilder()
     .setName('doom')
     .setDescription('Watch the 2 hour documentary of mAc\'s DOOM streams.')
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName('games')
+    .setDescription('Register your preferred game notifications.')
     .toJSON()
 ];
 
 // guild commands, used for testing
 const guildCommands = [
-  new SlashCommandBuilder()
-    .setName('games')
-    .setDescription('Register your preferred game notifications.')
-    .toJSON(),
   new SlashCommandBuilder()
     .setName('rally')
     .setDescription('RALLY THE SQUAD FOR GAMES!')
