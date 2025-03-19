@@ -8,11 +8,9 @@
 //         after 5(?) minutes, screech posts a summary of who is interested
 
 require('dotenv').config();
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-
-console.log("[GAMEGATHER] Module loaded");
 
 // store game info for opt in of users
 const gameDataFilePath = path.join(__dirname, 'gameData.json');
@@ -23,7 +21,7 @@ const defaultGameData = {
     "Among Us": [],
     "BlazBlue": [],
     "Hustle": [],
-    "Doom": []
+    "DOOM": []
   }
 };
 
@@ -72,130 +70,105 @@ function getEmoji(game) {
 // let's create the commands...
 module.exports = (client) => {
   
-  // /games command implementation
+  // /games command implementation using a select menu (whispered so only the user sees it)
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== 'games') return;
     
     console.log(`[GAMES] Command received from ${interaction.user.tag}`);
     
-    // Defer reply if not already done
-    if (!interaction.deferred && !interaction.replied) {
-      try {
-        await interaction.deferReply(); // not ephemeral so that reactions can be added
-        console.log("[GAMES] Deferred reply successfully.");
-      } catch (err) {
-        console.error("Error deferring reply for /games:", err);
-        return;
-      }
-    }
-    
-    // Immediately send a short "processing" message to satisfy Discord
+    // immediately respond with a whispered message containing a select menu
     try {
-      await interaction.editReply("Processing your game selections...");
-      console.log("[GAMES] Initial processing message sent.");
-    } catch (err) {
-      console.error("Error sending initial processing message for /games:", err);
-      return;
-    }
-    
-    // load current game data from file
-    let gameData = loadGameData();
-    // build the embed for this communication
-    let content = "React with the following emojis to toggle your notifications for each game:\n";
-    for (const game in gameData.games) {
-      const opted = gameData.games[game].includes(interaction.user.id);
-      content += `${game}: ${opted ? "Opted In" : "Not Opted In"} — ${getEmoji(game)}\n`;
-    }
-    content += "\nWhen finished, react with ✅ to confirm your choices.";
-    
-    let msg;
-    try {
-      // send the message as a follow-up (so we can add reactions)
-      msg = await interaction.editReply(content);
-      console.log("[GAMES] Follow-up message sent.");
-    } catch (err) {
-      console.error("Error sending /games follow-up:", err);
-      return;
-    }
-    
-    // add game emoji reactions and the confirm emoji
-    for (const game in gameEmojis) {
-      try {
-        await msg.react(getEmoji(game));
-        console.log(`[GAMES] Added reaction for ${game}.`);
-      } catch (err) {
-        console.error(`Error adding reaction for ${game}:`, err);
-      }
-    }
-    try {
-      await msg.react('✅');
-      console.log("[GAMES] Added confirm reaction (✅).");
-    } catch (err) {
-      console.error("Error adding confirm reaction:", err);
-    }
-    
-    // create a ReactionCollector that listens only for reactions from the invoker
-	const filter = (reaction, user) => {
-	  // for debugging, log the emoji object as a test
-	  console.log("Debug: Reaction received:", reaction.emoji);
-	  if (user.id !== interaction.user.id) return false;
-	  // always accept the confirm emoji by name
-	  if (reaction.emoji.name === '✅') return true;
-	  // list of valid custom emoji ids and fallback names :|
-	  const validEmojiIds = Object.values(gameEmojis);
-	  const validEmojiNames = ["amongus", "blazblue", "hustle", "cacopog"];
-	  return (reaction.emoji.id && validEmojiIds.includes(reaction.emoji.id)) ||
-			 (reaction.emoji.name && validEmojiNames.includes(reaction.emoji.name.toLowerCase()));
-	};
-
-    const collector = msg.createReactionCollector({ filter, time: 30000 });
-    console.log("[GAMES] Reaction collector started.");
-    
-    // when confirm (✅) is received, stop the collector
-    collector.on('collect', (reaction, user) => {
-      console.log(`[GAMES] Collected reaction ${reaction.emoji.name} from ${user.tag}`);
-      if (reaction.emoji.name === '✅') {
-        collector.stop();
-      }
-    });
-    
-    // when the collector ends, process the reactions and update opt-in status
-    collector.on('end', async collected => {
-      console.log("[GAMES] Collector ended. Collected reactions:", collected.size);
-      // for each game, check if the user reacted with that game's emoji
-      for (const game in gameEmojis) {
-        // find the reaction corresponding to the game's emoji
-        const r = collected.find(r => r.emoji.id === gameEmojis[game]);
-        if (r) {
-          // if user reacted, toggle their opt-in status for that game
-          if (gameData.games[game].includes(interaction.user.id)) {
-            // remove user (opt out)
-            gameData.games[game] = gameData.games[game].filter(id => id !== interaction.user.id);
-            console.log(`[GAMES] ${interaction.user.tag} opted out of ${game}`);
-          } else {
-            // or add user (opt in)
-            gameData.games[game].push(interaction.user.id);
-            console.log(`[GAMES] ${interaction.user.tag} opted in for ${game}`);
-          }
-        }
-      }
-      // save updated game data
-      saveGameData(gameData);
+      // load current game data from file
+      let gameData = loadGameData();
       
-      // build a confirmation message
-      let confirmation = "Your game notification subscriptions have been updated:\n";
+      // build the description showing current status for each game
+      let description = "```ansi\n\u001b[2;31m\nTELL ME WHAT GAMES YOU WANT WANT\nTO BE RALLIED IN WITH OTHERS!!!!\u001b[0m\n \n```";
       for (const game in gameData.games) {
         const opted = gameData.games[game].includes(interaction.user.id);
-        confirmation += `${game}: ${opted ? "Opted In" : "Opted Out"}\n`;
+        description += `${getEmoji(game)}  \`${game.padEnd(15, " ")} |   ${opted ? "SCREECH AT YOU!!" : "No notification."}\`\n`;
       }
-      try {
-        await interaction.followUp(confirmation);
-        console.log("[GAMES] Confirmation follow-up sent.");
-      } catch (err) {
-        console.error("Error sending /games confirmation follow-up:", err);
+      
+      // create a select menu with options for each game.
+      // set the 'default' flag to true if the user is already opted in.
+      const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('games_select')
+        .setPlaceholder('SELECT ALL YOUR GAMES!!!')
+        .setMinValues(0)
+        .setMaxValues(Object.keys(gameEmojis).length);
+      
+      for (const game in gameEmojis) {
+        const opted = gameData.games[game].includes(interaction.user.id);
+        selectMenu.addOptions({
+          label: game,
+          value: game,
+          description: opted ? "Notifications enabled, select to disable." : "No notification, select to notify.",
+          default: opted
+        });
       }
-    });
+      
+      // create an action row containing the select menu
+      const row = new ActionRowBuilder().addComponents(selectMenu);
+      
+      // send a whisper reply with the select menu
+      await interaction.reply({
+        content: description,
+        components: [row],
+        flags: 64
+      });
+      console.log("[GAMES] Whisper select menu sent for /games command.");
+      
+    } catch (err) {
+      console.error("Error handling /games command:", err);
+    }
+  });
+  
+  // listen for the select menu interaction with customId 'games_select'
+  client.on('interactionCreate', async interaction => {
+    if (!interaction.isStringSelectMenu()) return;
+    if (interaction.customId !== 'games_select') return;
+    
+    console.log(`[GAMES] Select menu submitted by ${interaction.user.tag}`);
+    
+    // load current game data
+    let gameData = loadGameData();
+    // the selected games are in interaction.values (an array of game names)
+    const selectedGames = interaction.values;
+    
+    // for each game in our list, update the user's opt-in status based on selection
+    for (const game in gameData.games) {
+      if (selectedGames.includes(game)) {
+        // if user is not in the list, add them
+        if (!gameData.games[game].includes(interaction.user.id)) {
+          gameData.games[game].push(interaction.user.id);
+          console.log(`[GAMES] ${interaction.user.tag} opted in for ${game}`);
+        }
+      } else {
+        // if user is in the list, remove them
+        if (gameData.games[game].includes(interaction.user.id)) {
+          gameData.games[game] = gameData.games[game].filter(id => id !== interaction.user.id);
+          console.log(`[GAMES] ${interaction.user.tag} opted out of ${game}`);
+        }
+      }
+    }
+    
+    // save the updated game data
+    saveGameData(gameData);
+    
+    // build a confirmation message
+    let confirmation = "```ansi\n\u001b[2;31m\n   YOU HAVE SCREECHED YOUR\n PREFERENCES AND I WILL RALLY\nYOU WHEN THE TIME COMES, FIEND!\u001b[0m\n \n```";
+    for (const game in gameData.games) {
+      const opted = gameData.games[game].includes(interaction.user.id);
+      confirmation += `${getEmoji(game)}  \`${game.padEnd(15, " ")} |   ${opted ? "SCREECH AT YOU!!" : "No notification."}\`\n`;
+
+    }
+    
+    try {
+      await interaction.update({ content: confirmation, components: [] });
+      console.log("[GAMES] Confirmation updated for /games command.");
+    } catch (err) {
+      console.error("Error updating /games confirmation:", err);
+    }
   });
   
   // /rally command implementation
@@ -210,7 +183,7 @@ module.exports = (client) => {
     // validate that the game is one of the allowed ones
     if (!Object.keys(gameEmojis).includes(game)) {
       try {
-        await interaction.reply("Invalid game selected. Please choose one of Among Us, BlazBlue, Hustle, or Doom.");
+        await interaction.reply({ content: "Invalid game selected. Please choose one of Among Us, BlazBlue, Hustle, or Doom.", flags: 64 });
         console.log("[RALLY] Invalid game selected reply sent.");
       } catch (err) {
         console.error("Error replying to invalid game in /rally:", err);
@@ -218,10 +191,10 @@ module.exports = (client) => {
       return;
     }
     
-    // defer reply if not already done
+    // defer reply with whisper option so only the invoker sees it
     if (!interaction.deferred && !interaction.replied) {
       try {
-        await interaction.deferReply();
+        await interaction.deferReply({ flags: 64 });
         console.log("[RALLY] Deferred reply successfully.");
       } catch (err) {
         console.error("Error deferring reply for /rally:", err);
@@ -307,7 +280,7 @@ module.exports = (client) => {
       summary += "Removed from notifications (🚫): " + (rallyResults.stop.size > 0 ? Array.from(rallyResults.stop).map(id => `<@${id}>`).join(', ') : "None");
       
       try {
-        await interaction.followUp(summary);
+        await interaction.followUp({ content: summary, flags: 64 });
         console.log("[RALLY] Rally summary follow-up sent.");
       } catch (err) {
         console.error("Error sending rally summary follow-up:", err);
