@@ -1,9 +1,9 @@
 // bot has been a success let's update with the ability to keep track of how much we nag mac
 require('dotenv').config();
 const fetch = require('node-fetch');
-// we're also going to write this locally now instead of a var that resets every launch
 const fs = require('fs');
 const path = require('path');
+const { getAccessToken, getBroadcasterId } = require('./twitchManager');
 
 // annoying functions to utilize local files:
 const dataFilePath = path.join(__dirname, 'gifData.json');
@@ -30,11 +30,6 @@ let defaultTrackedGIFs = [
   {
     filename: "strim.gif",
     game: "DLOOLM",
-    count: 0,
-  },
-  {
-    filename: "streamdammit.gif",
-    game: "MiSide",
     count: 0,
   },
 ];
@@ -123,37 +118,15 @@ module.exports = (client) => {
 
   // we have to use twitch api to get stream dates...
   async function getLastStreamDate() {
-    const { TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET } = process.env;
-    const channelLogin = "mAcStreamos"; // should move this to env var to be honest
-
-    // need access token.
-    const tokenUrl = `https://id.twitch.tv/oauth2/token?client_id=${TWITCH_CLIENT_ID}&client_secret=${TWITCH_CLIENT_SECRET}&grant_type=client_credentials`;
-    const tokenResponse = await fetch(tokenUrl, { method: 'POST' });
-    const tokenData = await tokenResponse.json();
-    if (!tokenResponse.ok) {
-      throw new Error(`Error fetching Twitch access token: ${tokenData.message}`);
-    }
-    const accessToken = tokenData.access_token;
-
-    // need broadcaster ID.
-    const userUrl = `https://api.twitch.tv/helix/users?login=${channelLogin}`;
-    const userResponse = await fetch(userUrl, {
-      headers: {
-        'Client-ID': TWITCH_CLIENT_ID,
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-    const userData = await userResponse.json();
-    if (!userResponse.ok || !userData.data || userData.data.length === 0) {
-      throw new Error(`Error fetching broadcaster ID for ${channelLogin}`);
-    }
-    const broadcasterId = userData.data[0].id;
-
-    // maybe we can just lookup latest stream date
+    const channelLogin = "mAcStreamos"; // consider moving this to an env var
+    // get valid access token (cached) and broadcaster id using new module
+    const accessToken = await getAccessToken();
+    const broadcasterId = await getBroadcasterId(channelLogin);
+    // fetch latest archived video for the broadcaster
     const videosUrl = `https://api.twitch.tv/helix/videos?user_id=${broadcasterId}&first=1&type=archive`;
     const videosResponse = await fetch(videosUrl, {
       headers: {
-        'Client-ID': TWITCH_CLIENT_ID,
+        'Client-ID': process.env.TWITCH_CLIENT_ID,
         'Authorization': `Bearer ${accessToken}`
       }
     });
@@ -161,7 +134,6 @@ module.exports = (client) => {
     if (!videosResponse.ok || !videosData.data || videosData.data.length === 0) {
       throw new Error(`Error fetching videos for broadcaster ${channelLogin}`);
     }
-    // return date
     return videosData.data[0].created_at;
   }
 };

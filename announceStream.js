@@ -1,41 +1,13 @@
 require('dotenv').config();
 const fetch = require('node-fetch');
 const { EmbedBuilder } = require('discord.js');
-
-async function getTwitchAccessToken() {
-  const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
-  const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
-  const tokenUrl = `https://id.twitch.tv/oauth2/token?client_id=${TWITCH_CLIENT_ID}&client_secret=${TWITCH_CLIENT_SECRET}&grant_type=client_credentials`;
-  const response = await fetch(tokenUrl, { method: 'POST' });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(`Error fetching Twitch access token: ${data.message}`);
-  }
-  return data.access_token;
-}
-
-// so much setup..
-async function getBroadcasterId(token) {
-  const TWITCH_CHANNEL_LOGIN = process.env.TWITCH_CHANNEL_LOGIN;
-  const userUrl = `https://api.twitch.tv/helix/users?login=${TWITCH_CHANNEL_LOGIN}`;
-  const response = await fetch(userUrl, {
-    headers: {
-      'Client-ID': process.env.TWITCH_CLIENT_ID,
-      'Authorization': `Bearer ${token}`
-    }
-  });
-  const data = await response.json();
-  if (!response.ok || !data.data || data.data.length === 0) {
-    throw new Error(`Error fetching broadcaster ID for ${TWITCH_CHANNEL_LOGIN}`);
-  }
-  return data.data[0].id;
-}
+const { getAccessToken, getBroadcasterId } = require('./twitchManager');
 
 // "get streams" doc suggestion
 async function getLiveStreamInfo() {
   try {
-    const token = await getTwitchAccessToken();
-    const broadcasterId = await getBroadcasterId(token);
+    const token = await getAccessToken();
+    const broadcasterId = await getBroadcasterId(process.env.TWITCH_CHANNEL_LOGIN);
     const streamUrl = `https://api.twitch.tv/helix/streams?user_id=${broadcasterId}`;
     const response = await fetch(streamUrl, {
       headers: {
