@@ -29,8 +29,8 @@ async function getLiveStreamInfo() {
 }
 
 // announcement
-async function announceLiveStream(client) {
-  const liveStream = await getLiveStreamInfo();
+async function announceLiveStream(client, token) {
+  const liveStream = await getLiveStreamInfo(token);
   // if this is somehow called and is not live, note it in console to see why
   if (!liveStream) {
     // console.log("Streamer is not live"); // no longer needed

@@ -6,10 +6,9 @@ const fetch = require('node-fetch');
 let twitchAccessToken = null;
 let twitchAccessTokenExpiry = 0; // in ms
 
-// return a valid twitch access token, refresh if needed
+// returns a valid twitch access token, refreshing if needed
 async function getAccessToken() {
   if (twitchAccessToken && Date.now() < twitchAccessTokenExpiry) {
-    console.log('using cached twitch token');
     return twitchAccessToken;
   }
   console.log('fetching new twitch token');
@@ -23,15 +22,14 @@ async function getAccessToken() {
   }
   twitchAccessToken = data.access_token;
   // set expiry a minute before actual expiry to account for delays
-  // (this has been a problem before... hopefully solution)
   twitchAccessTokenExpiry = Date.now() + (data.expires_in * 1000) - 60000;
   console.log(`new token expires at ${new Date(twitchAccessTokenExpiry).toLocaleString()}`);
   return twitchAccessToken;
 }
 
-// return the broadcaster id for the given channel login
-async function getBroadcasterId(channelLogin) {
-  const token = await getAccessToken();
+// returns the broadcaster id for the given channel login; if token is provided, use that token
+async function getBroadcasterId(channelLogin, token) {
+  token = token || await getAccessToken();
   const url = `https://api.twitch.tv/helix/users?login=${channelLogin}`;
   const response = await fetch(url, {
     headers: {

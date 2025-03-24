@@ -2,7 +2,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
-const { getAccessToken, getBroadcasterId } = require('./twitchManager');
+const { getAccessToken } = require('./twitchManager');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TWITCH_CHANNEL_LOGIN = "mAcStreamos"; // single use only for now, maybe turn into array later to randomly pick
@@ -26,7 +26,9 @@ const announceLiveStream = require('./announceStream');
 // fetch a random clip from Twitch
 async function getRandomClip() {
   const token = await getAccessToken();
-  const broadcasterId = await getBroadcasterId(TWITCH_CHANNEL_LOGIN);
+  // getBroadcasterId is still called inside getRandomClip for now
+  const { getBroadcasterId } = require('./twitchManager');
+  const broadcasterId = await getBroadcasterId(TWITCH_CHANNEL_LOGIN, token);
   // fetch up to 50 clips
   const url = `https://api.twitch.tv/helix/clips?broadcaster_id=${broadcasterId}&first=50`;
   const response = await fetch(url, {
@@ -103,8 +105,12 @@ client.on('interactionCreate', async interaction => {
 });
 
 setInterval(async () => {
-  console.log("Checking if streamer is live...");
-  await announceLiveStream(client);
+  try {
+    const token = await getAccessToken();
+    await announceLiveStream(client, token);
+  } catch (err) {
+    console.error("Error in setInterval:", err);
+  }
 }, 60000);
 
 client.login(DISCORD_TOKEN);
