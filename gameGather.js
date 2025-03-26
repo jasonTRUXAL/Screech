@@ -323,6 +323,15 @@ module.exports = (client) => {
       } catch (err) {
         console.error("Error adding reactions:", err);
       }
+	  
+      // enforce single vote per user using a map
+      const userVotesMap = new Map();
+      // object to store rally responses
+      const rallyResults = {
+        interested: new Set(),
+        notInterested: new Set(),
+        stop: new Set()
+      };
       
       // create a ReactionCollector on the rally message
       const rallyFilter = (reaction, user) => {
@@ -331,15 +340,21 @@ module.exports = (client) => {
       const rallyCollector = rallyMsg.createReactionCollector({ filter: rallyFilter, time: rallyDuration });
       console.log("[RALLY] Reaction collector started.");
       
-      // object to store rally responses
-      const rallyResults = {
-        interested: new Set(),
-        notInterested: new Set(),
-        stop: new Set()
-      };
-      
-      rallyCollector.on('collect', (reaction, user) => {
+      // updated collector to remove duplicate reactions and enforce a single vote
+	  // todo: unique reactions for games for fun
+      rallyCollector.on('collect', async (reaction, user) => {
         console.log(`[RALLY] Collected reaction ${reaction.emoji.name} from ${user.tag}`);
+        if (userVotesMap.has(user.id)) {
+          // remove extra reaction using discord's API
+          try {
+            await reaction.users.remove(user.id);
+            console.log(`[RALLY] Removed duplicate reaction ${reaction.emoji.name} from ${user.tag}`);
+          } catch (err) {
+            console.error(`Error removing duplicate reaction for user ${user.id}:`, err);
+          }
+          return;
+        }
+        userVotesMap.set(user.id, reaction.emoji.name);
         if (reaction.emoji.name === '✅') {
           rallyResults.interested.add(user.id);
         } else if (reaction.emoji.name === '❌') {
@@ -349,9 +364,9 @@ module.exports = (client) => {
         }
       });
       
-      // timer to update the embed with remaining time every 15 seconds
+      // timer to update the embed with remaining time every 10 seconds
 	  // big test here for "live updates"
-      const updateInterval = 15000;
+      const updateInterval = 10000;
       const timer = setInterval(async () => {
         const timeLeft = rallyEndTime - Date.now();
         if (timeLeft <= 0) return;
@@ -394,6 +409,18 @@ module.exports = (client) => {
         if (updated) {
           saveGameData(gameData);
         }
+		
+        // for each user who voted yes and is not already opted in, add them to the list
+        const newOptedIn = [];
+        for (const userId of rallyResults.interested) {
+          if (!gameData.games[gameName].includes(userId)) {
+            gameData.games[gameName].push(userId);
+            newOptedIn.push(userId);
+          }
+        }
+		
+        // save updated opt-in data after potential additions
+        saveGameData(gameData);
         
         // build a summary of the rally results
         let summary = `Rally for **${gameName}** has ended.\n\n`;
@@ -443,14 +470,40 @@ module.exports = (client) => {
           .setDescription(statsDescription || "No participants.")
           .setColor(0x9146FF)
           .setTimestamp();
+		  
+        // create a button that allows newly opted in users to remove themselves.
+        const removeButton = new ButtonBuilder()
+          .setCustomId(`remove_opt_in_${gameName}`)
+          .setLabel("Remove me from opt-in")
+          .setStyle(ButtonStyle.Danger);
+        const buttonRow = new ActionRowBuilder().addComponents(removeButton);
         
         try {
-          await interaction.channel.send({ content: summary, embeds: [statsEmbed] });
+		  await interaction.channel.send({ content: summary, embeds: [statsEmbed], components: [buttonRow] });
           console.log("[RALLY] Rally summary follow-up sent.");
         } catch (err) {
           console.error("Error sending rally summary follow-up:", err);
         }
       });
+    }
+  });
+  // handle the removal button interaction
+  client.on('interactionCreate', async interaction => {
+    if (!interaction.isButton()) return;
+    if (!interaction.customId.startsWith('remove_opt_in_')) return;
+    
+    // get the game name from the custom ID
+    const gameName = interaction.customId.replace('remove_opt_in_', '');
+    let gameData = loadGameData();
+    
+    // if user is in the opt-in list, remove them
+    if (gameData.games[gameName] && gameData.games[gameName].includes(interaction.user.id)) {
+      gameData.games[gameName] = gameData.games[gameName].filter(id => id !== interaction.user.id);
+      saveGameData(gameData);
+      await interaction.reply({ content: `You have been removed from the opt-in list for ${gameName}.`, flags: 64 });
+      console.log(`[RALLY] User ${interaction.user.tag} removed from ${gameName} opt-in list via removal button.`);
+    } else {
+      await interaction.reply({ content: `You are not currently opted in for ${gameName}.`, flags: 64 });
     }
   });
 };
