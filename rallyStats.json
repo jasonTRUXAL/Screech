@@ -1,10 +1,10 @@
 {
   "63878904732987392": {
-    "initiated": 3,
-    "totalJoined": 3,
+    "initiated": 5,
+    "totalJoined": 5,
     "joined": {
       "Among Us": 1,
-      "Doom": 2
+      "Doom": 4
     }
   }
 }

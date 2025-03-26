@@ -351,30 +351,32 @@ module.exports = (client) => {
       
       // timer to update the embed with remaining time every 15 seconds
 	  // big test here for "live updates"
-      const updateInterval = 15000; // 30 seconds
+      const updateInterval = 15000;
       const timer = setInterval(async () => {
         const timeLeft = rallyEndTime - Date.now();
-        if (timeLeft <= 0) {
-          clearInterval(timer);
-          return;
-        }
+        if (timeLeft <= 0) return;
         const minutes = Math.floor(timeLeft / 60000);
         const seconds = Math.floor((timeLeft % 60000) / 1000);
         const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        const updatedEmbed = EmbedBuilder.from(publicEmbed)
-		const timeFieldIndex = updatedEmbed.data.fields.findIndex(field => field.name === 'TIME REMAINING:');
-		if (timeFieldIndex !== -1) {
-		  updatedEmbed.data.fields[timeFieldIndex].value = `${timeStr} TO RALLY TOGETHER!!!`;
-		} else {
-		  console.warn("Could not find 'TIME REMAINING:' field to update.");
-		}
-		try {
-		  await rallyMsg.edit({ embeds: [updatedEmbed] });
-		} catch (err) {
-		  console.error('Error updating rally message:', err);
-		}
+        const updatedEmbed = EmbedBuilder.from(publicEmbed);
+        const timeFieldIndex = updatedEmbed.data.fields.findIndex(field => field.name === 'TIME REMAINING:');
+        if (timeFieldIndex !== -1) {
+          updatedEmbed.data.fields[timeFieldIndex].value = `${timeStr} TO RALLY TOGETHER!!!`;
+        } else {
+          console.warn("Could not find 'TIME REMAINING:' field to update.");
+        }
+        try {
+          await rallyMsg.edit({ embeds: [updatedEmbed] });
+        } catch (err) {
+          console.error('Error updating rally message:', err);
+        }
       }, updateInterval);
       
+      setTimeout(() => {
+        clearInterval(timer);
+        rallyCollector.stop();
+      }, rallyDuration);
+	  
       // when the collector ends, process the results
       rallyCollector.on('end', async () => {
         clearInterval(timer);
