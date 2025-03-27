@@ -369,7 +369,11 @@ module.exports = (client) => {
       const updateInterval = 10000;
       const timer = setInterval(async () => {
         const timeLeft = rallyEndTime - Date.now();
-        if (timeLeft <= 0) return;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          rallyCollector.stop();
+          return;
+        }
         const minutes = Math.floor(timeLeft / 60000);
         const seconds = Math.floor((timeLeft % 60000) / 1000);
         const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -386,11 +390,6 @@ module.exports = (client) => {
           console.error('Error updating rally message:', err);
         }
       }, updateInterval);
-      
-      setTimeout(() => {
-        clearInterval(timer);
-        rallyCollector.stop();
-      }, rallyDuration);
 	  
       // when the collector ends, process the results
       rallyCollector.on('end', async () => {
@@ -419,37 +418,71 @@ module.exports = (client) => {
 		
         // save updated opt-in data after potential additions
         saveGameData(gameData);
+		
+        // update rally stats
+        const rallyStats = loadRallyStats();
+        // initiator is included in the stats, using interaction.user.id from confirmation
+        const initiatorId = interaction.user.id;
+        if (!rallyStats[initiatorId]) {
+          rallyStats[initiatorId] = { initiated: 0, totalJoined: 0, joined: {} };
+        }
+        rallyStats[initiatorId].initiated++;
+        
+        // initiator is in the interested list
+        rallyResults.interested.add(initiatorId);
+        
+        // user who joined, update their stats
+        rallyResults.interested.forEach(userId => {
+          if (!rallyStats[userId]) {
+            rallyStats[userId] = { initiated: 0, totalJoined: 0, joined: {} };
+          }
+          // update for this specific game
+          if (!rallyStats[userId].joined[gameName]) {
+            rallyStats[userId].joined[gameName] = 0;
+          }
+          rallyStats[userId].joined[gameName]++;
+          rallyStats[userId].totalJoined++;
+        });
+        
+        // udate the stats by saving them
+        saveRallyStats(rallyStats);
         
         // build a summary of the rally results
         let summary = `RALLY COMPLETE!!! ${rallyResults.interested.size} CACOPOGS INTERESTED!!`;
 		// complete rewrite to give plush presentation
-        let fields = [];
-        for (const userId of rallyResults.interested) {
+		const interestedUserIds = Array.from(rallyResults.interested);
+        let userEmbeds = [];
+        // fetch user objects to get usernames
+        let userObjects;
+        try {
+          userObjects = await Promise.all(interestedUserIds.map(id => client.users.fetch(id)));
+        } catch (err) {
+          console.error("Error fetching user objects:", err);
+          userObjects = [];
+        }
+        const userMap = {};
+        userObjects.forEach(user => {
+          userMap[user.id] = user.username;
+        });
+		
+        for (const userId of interestedUserIds) {
           const stats = rallyStats[userId];
           const gameCount = stats.joined[gameName] || 0;
-          // the user
-          fields.push({ name: `<@${userId}>`, value: '\u200B' });
-          // the user stats not inline and fancy af
-          fields.push({ name: `${gameName} Rallies`, value: `${gameCount}`, inline: true });
-          fields.push({ name: 'Total Rallies', value: `${stats.totalJoined}`, inline: true });
-          fields.push({ name: 'Initiated Rallies', value: `${stats.initiated}`, inline: true });
+          const username = userMap[userId] || `User ${userId}`;
+          let embed = new EmbedBuilder()
+            .setDescription(`${username}`)
+            .addFields(
+              { name: `${gameName} Rallies`, value: `${gameCount}`, inline: true },
+              { name: 'Total Rallies', value: `${stats.totalJoined}`, inline: true },
+              { name: 'Initiated Rallies', value: `${stats.initiated}`, inline: true }
+            )
+            .setColor(0xFF0000)
+            .setTimestamp();
+          userEmbeds.push(embed);
         }
-        
-        const statsEmbed = new EmbedBuilder()
-          .setTitle(`Rally for ${gameName} Summary`)
-          .addFields(fields)
-          .setColor(0xFF0000)
-          .setTimestamp();
-		  
-        // create a button that allows newly opted in users to remove themselves.
-        const removeButton = new ButtonBuilder()
-          .setCustomId(`remove_opt_in_${gameName}`)
-          .setLabel("DON'T @ ME ANYMORE!")
-          .setStyle(ButtonStyle.Danger);
-        const buttonRow = new ActionRowBuilder().addComponents(removeButton);
-        
+		// possible problem: 10 embeds max, f...
         try {
-		  await interaction.channel.send({ content: summary, embeds: [statsEmbed], components: [buttonRow] });
+          await interaction.channel.send({ content: summary, embeds: userEmbeds, components: [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`remove_opt_in_${gameName}`).setLabel("DON'T @ ME ANYMORE!").setStyle(ButtonStyle.Danger))] });
           console.log("[RALLY] Rally summary follow-up sent.");
         } catch (err) {
           console.error("Error sending rally summary follow-up:", err);
