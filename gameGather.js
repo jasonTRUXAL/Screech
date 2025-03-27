@@ -295,7 +295,7 @@ module.exports = (client) => {
       const publicEmbed = new EmbedBuilder()
         .setTitle(`I SCREECH AT YOU ALL!!!!`)
         .setDescription(`THE TIME HAS COME! THE RALLY IS HERE!\n\`\`\`IT IS TIME FOR ${gameName.toUpperCase()}\`\`\`\n**TELL THEM WHAT YOU THINK!!!**`)
-        .setColor(0xf2b0ff)
+        .setColor(0xff0000)
         .setTimestamp()
 		.addFields(
 		  { name: '✅', value: 'I AM IN!!', inline: true },
@@ -411,11 +411,9 @@ module.exports = (client) => {
         }
 		
         // for each user who voted yes and is not already opted in, add them to the list
-        const newOptedIn = [];
         for (const userId of rallyResults.interested) {
           if (!gameData.games[gameName].includes(userId)) {
             gameData.games[gameName].push(userId);
-            newOptedIn.push(userId);
           }
         }
 		
@@ -423,58 +421,30 @@ module.exports = (client) => {
         saveGameData(gameData);
         
         // build a summary of the rally results
-        let summary = `Rally for **${gameName}** has ended.\n\n`;
-        summary += "Interested (✅): " + (rallyResults.interested.size > 0 ? Array.from(rallyResults.interested).map(id => `<@${id}>`).join(', ') : "None") + "\n";
-        summary += "Not Interested (❌): " + (rallyResults.notInterested.size > 0 ? Array.from(rallyResults.notInterested).map(id => `<@${id}>`).join(', ') : "None") + "\n";
-        summary += "Opted Out (🚫): " + (rallyResults.stop.size > 0 ? Array.from(rallyResults.stop).map(id => `<@${id}>`).join(', ') : "None");
-        
-        // update rally stats
-        const rallyStats = loadRallyStats();
-        // initiator is included in the stats, using interaction.user.id from confirmation
-        const initiatorId = interaction.user.id;
-        if (!rallyStats[initiatorId]) {
-          rallyStats[initiatorId] = { initiated: 0, totalJoined: 0, joined: {} };
-        }
-        rallyStats[initiatorId].initiated++;
-        
-        // initiator is in the interested list
-        rallyResults.interested.add(initiatorId);
-        
-        // user who joined (✅), update their stats
-        rallyResults.interested.forEach(userId => {
-          if (!rallyStats[userId]) {
-            rallyStats[userId] = { initiated: 0, totalJoined: 0, joined: {} };
-          }
-          // update for this specific game
-          if (!rallyStats[userId].joined[gameName]) {
-            rallyStats[userId].joined[gameName] = 0;
-          }
-          rallyStats[userId].joined[gameName]++;
-          rallyStats[userId].totalJoined++;
-        });
-        
-		// update the stats
-        saveRallyStats(rallyStats);
-        
-        // build a stats summary embed, the whole reason for the stats
-        let statsDescription = "";
-        // list the users who participated in the list
+        let summary = `RALLY COMPLETE!!! ${rallyResults.interested.size} CACOPOGS INTERESTED!!`;
+		// complete rewrite to give plush presentation
+        let fields = [];
         for (const userId of rallyResults.interested) {
           const stats = rallyStats[userId];
           const gameCount = stats.joined[gameName] || 0;
-          statsDescription += `<@${userId}>:\n • Joined **${gameName}** rallies: ${gameCount}\n • Total joined rallies: ${stats.totalJoined}\n • Initiated rallies: ${stats.initiated}\n\n`;
+          // the user
+          fields.push({ name: `<@${userId}>`, value: '\u200B' });
+          // the user stats not inline and fancy af
+          fields.push({ name: `${gameName} Rallies`, value: `${gameCount}`, inline: true });
+          fields.push({ name: 'Total Rallies', value: `${stats.totalJoined}`, inline: true });
+          fields.push({ name: 'Initiated Rallies', value: `${stats.initiated}`, inline: true });
         }
         
         const statsEmbed = new EmbedBuilder()
           .setTitle(`Rally for ${gameName} Summary`)
-          .setDescription(statsDescription || "No participants.")
-          .setColor(0x9146FF)
+          .addFields(fields)
+          .setColor(0xFF0000)
           .setTimestamp();
 		  
         // create a button that allows newly opted in users to remove themselves.
         const removeButton = new ButtonBuilder()
           .setCustomId(`remove_opt_in_${gameName}`)
-          .setLabel("Remove me from opt-in")
+          .setLabel("DON'T @ ME ANYMORE!")
           .setStyle(ButtonStyle.Danger);
         const buttonRow = new ActionRowBuilder().addComponents(removeButton);
         
