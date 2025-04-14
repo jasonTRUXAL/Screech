@@ -21,7 +21,7 @@ module.exports = (client) => {
         const streamInfo = {
         title: "Doom Part XX",
         game: "DOOM 2016",
-        url: "https://twitch.tv/mAcStreamos"
+        url: "https://twitch.tv/mAcChaosCh"
       };
 
     const embed = new EmbedBuilder()

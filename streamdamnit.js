@@ -4,6 +4,7 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 const { getAccessToken, getBroadcasterId } = require('./twitchManager');
+const TWITCH_CHANNEL_LOGIN = process.env.TWITCH_CHANNEL_LOGIN;
 
 // annoying functions to utilize local files:
 const dataFilePath = path.join(__dirname, 'gifData.json');
@@ -118,7 +119,7 @@ module.exports = (client) => {
 
   // we have to use twitch api to get stream dates...
   async function getLastStreamDate() {
-    const channelLogin = "mAcStreamos"; // consider moving this to an env var
+    const channelLogin = TWITCH_CHANNEL_LOGIN;
     // get valid access token (cached) and broadcaster id using new module
     const accessToken = await getAccessToken();
     const broadcasterId = await getBroadcasterId(channelLogin);

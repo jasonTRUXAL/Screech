@@ -47,7 +47,7 @@ async function announceLiveStream(client, token) {
     .setTitle("<:cacopog:1342021381742788689> MAC CHAOS IS STREAMING <:cacopog:1342021381742788689>")
     .setURL(streamUrl)
     .setDescription(`**${streamTitle}**\n> ${gameName}`)
-    .setThumbnail("https://static-cdn.jtvnw.net/jtv_user_pictures/macstreamos-profile_image-e05c6b505301c2de-70x70.png")
+    .setThumbnail("https://static-cdn.jtvnw.net/jtv_user_pictures/64a2d99f-4517-414a-8132-2f682879995d-profile_image-70x70.png")
     .setColor(0x9146FF)
     .setTimestamp();
 	

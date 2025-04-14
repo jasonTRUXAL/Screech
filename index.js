@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 const { getAccessToken } = require('./twitchManager');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
-const TWITCH_CHANNEL_LOGIN = "mAcStreamos"; // single use only for now, maybe turn into array later to randomly pick
+const TWITCH_CHANNEL_LOGIN = process.env.TWITCH_CHANNEL_LOGIN;
 
 // update the gateway intents
 const client = new Client({ 
@@ -26,7 +26,6 @@ const announceLiveStream = require('./announceStream');
 // fetch a random clip from Twitch
 async function getRandomClip() {
   const token = await getAccessToken();
-  // getBroadcasterId is still called inside getRandomClip for now
   const { getBroadcasterId } = require('./twitchManager');
   const broadcasterId = await getBroadcasterId(TWITCH_CHANNEL_LOGIN, token);
   // fetch up to 50 clips
