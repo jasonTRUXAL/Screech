@@ -61,7 +61,8 @@ module.exports = (client) => {
         optInData.optInUsers.push(userId);
         saveOptInData(optInData);
         await interaction.editReply("<:cacopog:1342021381742788689> **I WILL SCREECH AT YOU WHEN MAC CHAOS IS STREAMING!** <:cacopog:1342021381742788689>");
-      } catch (err) {
+      }
+	} catch (err) {
       console.error("Error processing /streamos interaction:", err);
     }
   });
