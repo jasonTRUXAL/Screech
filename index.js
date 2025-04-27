@@ -21,7 +21,6 @@ require('./streamdamnit')(client);
 require('./streamos')(client);
 require('./testAnnounce')(client);
 require('./gameGather')(client);
-const announceLiveStream = require('./announceStream');
 
 // fetch a random clip from Twitch
 async function getRandomClip() {
@@ -103,12 +102,30 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
+let hasAnnouncedLive = false;
+
 setInterval(async () => {
   try {
     const token = await getAccessToken();
-    await announceLiveStream(client, token);
+    const liveStream = await require('./announceStream').getLiveStreamInfo(token);
+
+    if (liveStream) {
+      if (!hasAnnouncedLive) {
+        // not announced yet, announce now
+        await announceLiveStream(client, token);
+        hasAnnouncedLive = true;
+        console.log("stream is live!");
+      } else {
+        console.log("stream is live but already announced");
+      }
+    } else {
+      if (hasAnnouncedLive) {
+        console.log("no longer live, resetting announcement");
+      }
+      hasAnnouncedLive = false; // reset if streamer goes offline
+    }
   } catch (err) {
-    console.error("Error in setInterval:", err);
+    console.error("Error in setInterval announcement: ", err);
   }
 }, 60000);
 
