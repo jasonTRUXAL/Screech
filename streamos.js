@@ -39,22 +39,30 @@ module.exports = (client) => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== 'streamos') return;
 	
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply();
+    try {
+      if (!interaction.deferred && !interaction.replied) {
+        await interaction.deferReply();
+      }
+    } catch (err) {
+      console.error("Error deferring reply for /streamos:", err);
+      return;
     }
-    
-    // toggle opt in/out for stream notifications
-    const userId = interaction.user.id;
-    if (optInData.optInUsers.includes(userId)) {
-      // if already opted in remove them (opt out)
-      optInData.optInUsers = optInData.optInUsers.filter(id => id !== userId);
-      saveOptInData(optInData);
-      await interaction.editReply("<:cacopog:1342021381742788689> I WILL TRY TO SCREECH AT YOU LESS! <:cacopog:1342021381742788689>");
-    } else {
-      // if not then add them (opt in)
-      optInData.optInUsers.push(userId);
-      saveOptInData(optInData);
-      await interaction.editReply("<:cacopog:1342021381742788689> **I WILL SCREECH AT YOU WHEN MAC CHAOS IS STREAMING!** <:cacopog:1342021381742788689>");
+	
+	try {
+      // toggle opt in/out for stream notifications
+      const userId = interaction.user.id;
+      if (optInData.optInUsers.includes(userId)) {
+        // if already opted in remove them (opt out)
+        optInData.optInUsers = optInData.optInUsers.filter(id => id !== userId);
+        saveOptInData(optInData);
+        await interaction.editReply("<:cacopog:1342021381742788689> I WILL TRY TO SCREECH AT YOU LESS! <:cacopog:1342021381742788689>");
+      } else {
+        // if not then add them (opt in)
+        optInData.optInUsers.push(userId);
+        saveOptInData(optInData);
+        await interaction.editReply("<:cacopog:1342021381742788689> **I WILL SCREECH AT YOU WHEN MAC CHAOS IS STREAMING!** <:cacopog:1342021381742788689>");
+      } catch (err) {
+      console.error("Error processing /streamos interaction:", err);
     }
   });
   

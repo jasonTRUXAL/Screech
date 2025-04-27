@@ -3,6 +3,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
 const { getAccessToken } = require('./twitchManager');
+const { announceLiveStream, getLiveStreamInfo } = require('./announceStream');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TWITCH_CHANNEL_LOGIN = process.env.TWITCH_CHANNEL_LOGIN;

@@ -85,4 +85,4 @@ async function announceLiveStream(client, token) {
   channel.send({ content: mentions, embeds: [embed] });
 }
 
-module.exports = announceLiveStream;
+module.exports = { announceLiveStream, getLiveStreamInfo };
