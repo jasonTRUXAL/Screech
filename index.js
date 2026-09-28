@@ -1,133 +1,70 @@
 // screech index, here goes...
-require('dotenv').config();
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const fetch = require('node-fetch');
-const { getAccessToken } = require('./twitchManager');
-const { announceLiveStream, getLiveStreamInfo } = require('./announceStream');
+const { Client, GatewayIntentBits, MessageFlags } = require('discord.js');
+const { env } = require('./src/config');
+const commands = require('./src/commands');
+const { startLiveMonitor } = require('./src/announce');
+const nags = require('./src/nags');
 
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
-const TWITCH_CHANNEL_LOGIN = process.env.TWITCH_CHANNEL_LOGIN;
+// an unhandled error in any async handler would otherwise crash the whole bot
+process.on('unhandledRejection', err => console.error('Unhandled rejection:', err));
 
-// update the gateway intents
-const client = new Client({ 
+const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions
-  ] 
+    GatewayIntentBits.GuildMessageReactions,
+  ],
+});
+client.on('error', err => console.error('Discord client error:', err));
+
+// command name -> command, and button/select custom id prefix -> handler
+const commandsByName = new Map(commands.map(command => [command.data.name, command]));
+const componentHandlers = commands.flatMap(command => Object.entries(command.components || {}));
+
+async function replyWithError(interaction) {
+  const message = { content: 'SOMETHING WENT WRONG, I HAVE SCREECHED TOO HARD!', flags: MessageFlags.Ephemeral };
+  try {
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp(message);
+    } else {
+      await interaction.reply(message);
+    }
+  } catch (err) {
+    console.error('Could not tell the user about the error:', err);
+  }
+}
+
+client.on('interactionCreate', async interaction => {
+  try {
+    if (interaction.isChatInputCommand()) {
+      console.log(`[CMD] /${interaction.commandName} from ${interaction.user.tag}`);
+      const command = commandsByName.get(interaction.commandName);
+      if (command) await command.execute(interaction);
+    } else if (interaction.isButton() || interaction.isStringSelectMenu()) {
+      const match = componentHandlers.find(([prefix]) => interaction.customId.startsWith(prefix));
+      if (match) {
+        const [prefix, handler] = match;
+        await handler(interaction, interaction.customId.slice(prefix.length));
+      }
+    }
+  } catch (err) {
+    console.error(`Error handling interaction ${interaction.commandName || interaction.customId}:`, err);
+    await replyWithError(interaction);
+  }
 });
 
-require('./streamdamnit')(client);
-require('./streamos')(client);
-require('./testAnnounce')(client);
-require('./gameGather')(client);
-
-// fetch a random clip from Twitch
-async function getRandomClip() {
-  const token = await getAccessToken();
-  const { getBroadcasterId } = require('./twitchManager');
-  const broadcasterId = await getBroadcasterId(TWITCH_CHANNEL_LOGIN, token);
-  // fetch up to 50 clips
-  const url = `https://api.twitch.tv/helix/clips?broadcaster_id=${broadcasterId}&first=50`;
-  const response = await fetch(url, {
-    headers: {
-      'Client-ID': process.env.TWITCH_CLIENT_ID,
-      'Authorization': `Bearer ${token}`
-    }
-  });
-  const data = await response.json();
-  if (!response.ok || !data.data || data.data.length === 0) {
-    throw new Error("no clips found");
+client.on('messageCreate', async message => {
+  try {
+    await nags.handleMessage(message);
+  } catch (err) {
+    console.error('Error counting nags:', err);
   }
-  // select a random clip from the list
-  const randomIndex = Math.floor(Math.random() * data.data.length);
-  return data.data[randomIndex];
-}
+});
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
+  startLiveMonitor(client);
 });
 
-client.on('interactionCreate', async interaction => {
-  if (interaction.isChatInputCommand()) {
-    console.log("Received interaction:", interaction.commandName);
-  }
-  
-  if (interaction.commandName === 'clips') {
-    // altering defer (just a note)
-    if (!interaction.deferred && !interaction.replied) {
-      try {
-        await interaction.deferReply();
-      } catch (err) {
-        console.error("Error deferring reply for /clips:", err);
-        return;
-      }
-    }
-    try {
-      const clip = await getRandomClip();
-      // change the process to instead embed the video not show a thumbnail, also flavor text
-      await interaction.editReply(`<:cacopog:1342021381742788689> HERE IS MAC CHAOS SCREECHING <:cacopog:1342021381742788689>\n${clip.url}`);
-    } catch (error) {
-      console.error("Error fetching clip:", error);
-      await interaction.editReply("APOLOGIES, I AM DEAF CURRENTLY!");
-    }
-  } else if (interaction.commandName === 'doom') {
-    // new /doom command to present a fancy YouTube link card
-    if (!interaction.deferred && !interaction.replied) {
-      try {
-        await interaction.deferReply();
-      } catch (err) {
-        console.error("Error deferring reply for /doom:", err);
-        return;
-      }
-    }
-    try {
-      const youtubeUrl = "https://youtu.be/uzqG536vBTw";
-      // create a custom embed that resembles card.
-      // note: setting the URL on the embed makes the title clickable.
-      // Discord does not support making the image itself clickable independently. :|
-      const embed = new EmbedBuilder()
-        .setTitle("mAc Chaos Plays DOOM")
-        .setURL(youtubeUrl)
-        .setDescription("FPS Legend mAc Chaos plays DOOM 2016 live on Twitch over 11 gameplay sessions and here we highlight the best moments of his legendary experience raising Hell itself as he blasts through every Cacodemon in sight.")
-        .setColor(10158080)
-        .setFooter({ text: "A Lavarinth Compilation", iconURL: "https://cdn.discordapp.com/emojis/1342021381742788689.webp" })
-        .setImage("https://i9.ytimg.com/vi/uzqG536vBTw/mqdefault.jpg?v=67cfd09a&sqp=CLSgv74G&rs=AOn4CLAUZrQ8m95z3KpuyDbAZNSqrswKUQ")
-        .setThumbnail("https://cdn.discordapp.com/emojis/966554880695226368.webp?size=96&animated=true");
-      await interaction.editReply({ content: youtubeUrl, embeds: [embed] });
-    } catch (error) {
-      console.error("Error handling /doom command:", error);
-      await interaction.editReply("An error occurred while processing the command.");
-    }
-  }
-});
-
-let hasAnnouncedLive = false;
-
-setInterval(async () => {
-  try {
-    const token = await getAccessToken();
-    const liveStream = await require('./announceStream').getLiveStreamInfo(token);
-
-    if (liveStream) {
-      if (!hasAnnouncedLive) {
-        // not announced yet, announce now
-        await announceLiveStream(client, token);
-        hasAnnouncedLive = true;
-        console.log("stream is live!");
-      } else {
-        console.log("stream is live but already announced");
-      }
-    } else {
-      if (hasAnnouncedLive) {
-        console.log("no longer live, resetting announcement");
-      }
-      hasAnnouncedLive = false; // reset if streamer goes offline
-    }
-  } catch (err) {
-    console.error("Error in setInterval announcement: ", err);
-  }
-}, 60000);
-
-client.login(DISCORD_TOKEN);
+client.login(env.DISCORD_TOKEN);
