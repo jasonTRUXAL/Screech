@@ -26,3 +26,10 @@ temp/
 # Build output (if any)
 dist/
 build/
+
+# Bot data (written while running; lives in data/, old copies may sit in the root)
+data/
+/gameData.json
+/gifData.json
+/optinData.json
+/rallyStats.json
